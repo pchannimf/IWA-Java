@@ -69,6 +69,7 @@ jobs:
         uses: fortify/github-action/setup@3b5cd8bc279d25264d4afbc9a66f9b26144e68f9
         with:
           export-path: true
+          use-cache: false
           sc-client: 23.2.1
           fcli: skip
           fod-uploader: skip
