@@ -57,10 +57,10 @@ jobs:
       #    EXTRA_PACKAGE_OPTS: -oss
       #    DO_EXPORT: true
 
-      - name: Update system CA certificates
-        run: |
-          sudo apt-get update
-          sudo apt-get install --reinstall -y ca-certificates
+      # - name: Update system CA certificates
+      #  run: |
+      #    sudo apt-get update
+      #    sudo apt-get install --reinstall -y ca-certificates
 
       #### Set up Fortify ScanCentral Client ###
       - name: Download Fortify ScanCentral Client
@@ -69,7 +69,7 @@ jobs:
         uses: fortify/github-action/setup@3b5cd8bc279d25264d4afbc9a66f9b26144e68f9
         with:
           export-path: true
-          sc-client: 25.2.0
+          sc-client: 24.4.1
           fcli: skip
           fod-uploader: skip
           vuln-exporter: skip
