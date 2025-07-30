@@ -41,15 +41,28 @@ jobs:
           distribution: 'temurin'
 
       # Perform Fortify on Demand SAST + SCA scan and import SAST results into GitHub code scanning alerts
-      - name: Run FoD SAST Scan
-        uses: fortify/github-action@v1
+      # - name: Run FoD SAST Scan
+      #  uses: fortify/github-action@v1
+      #  with:
+      #    sast-scan: true
+      #  env:
+      #    FOD_URL: https://ams.fortify.com
+      #    FOD_TENANT: ${{secrets.FOD_TENANT}}
+      #    FOD_USER: ${{secrets.FOD_USER}}
+      #    FOD_PASSWORD: ${{secrets.FOD_PAT}}
+      #    FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
+      #    EXTRA_PACKAGE_OPTS: -oss
+      #    DO_EXPORT: true
+
+      #### Set up Fortify ScanCentral Client ###
+      - name: Download Fortify ScanCentral Client
+        id: download-scancentral-client
+        if: success()
+        uses: fortify/github-action/setup@3b5cd8bc279d25264d4afbc9a66f9b26144e68f9
         with:
-          sast-scan: true
-        env:
-          FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{secrets.FOD_TENANT}}
-          FOD_USER: ${{secrets.FOD_USER}}
-          FOD_PASSWORD: ${{secrets.FOD_PAT}}
-          FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
-          EXTRA_PACKAGE_OPTS: -oss
-          DO_EXPORT: true
+          export-path: true
+          sc-client: ${{ env.SCANCENTRAL_VERSION }}
+          fcli: skip
+          fod-uploader: skip
+          vuln-exporter: skip
+          bugtracker-utility: skip
