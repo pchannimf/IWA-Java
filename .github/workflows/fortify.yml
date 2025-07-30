@@ -23,6 +23,9 @@ on:
 jobs:
   Fortify-AST-Scan:
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_STEP_DEBUG: true
+      ACTIONS_RUNNER_DEBUG: true
     permissions:
       actions: read
       contents: read
@@ -53,6 +56,11 @@ jobs:
       #    FOD_RELEASE: ${{ secrets.FOD_RELEASE_ID }}
       #    EXTRA_PACKAGE_OPTS: -oss
       #    DO_EXPORT: true
+
+      - name: Update system CA certificates
+        run: |
+          sudo apt-get update
+          sudo apt-get install --reinstall -y ca-certificates
 
       #### Set up Fortify ScanCentral Client ###
       - name: Download Fortify ScanCentral Client
