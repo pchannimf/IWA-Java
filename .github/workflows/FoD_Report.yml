@@ -15,12 +15,13 @@ jobs:
           # Store these in GitHub Secrets, not plaintext:
           FOD_USERNAME: $(FOD_USER)
           FOD_PASSWORD: $(FOD_PWD)
+          FOD_TENANT1: $(FOD_TENANT)
           FOD_API_BASE: https://api.ams.fortify.com   # change to your region
         run: |
           set -euo pipefail
       
           # Compose FoD username as <tenant>\<username>
-          FOD_USER_COMBINED="${FOD_TENANT}\\${FOD_USERNAME}"
+          FOD_USER_COMBINED="${FOD_TENANT1}\\${FOD_USERNAME}"
       
           # Request token using Resource Owner Password Credentials
           RESP=$(curl -sS -X POST "$FOD_API_BASE/oauth/token" \
