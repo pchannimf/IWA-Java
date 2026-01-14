@@ -13,9 +13,8 @@ jobs:
       - name: Get OAuth Token (password grant)
         env:
           # Store these in GitHub Secrets, not plaintext:
-          FOD_USERNAME: "<USER>" # please edit this
-          FOD_PASSWORD: "<Password>" # please edit this
-          FOD_TENANT: "<tenant>" # please edit this
+          FOD_USERNAME: $(FOD_USER)
+          FOD_PASSWORD: $(FOD_PWD)
           FOD_API_BASE: https://api.ams.fortify.com   # change to your region
         run: |
           set -euo pipefail
@@ -51,8 +50,8 @@ jobs:
           FOD_API_BASE: https://api.ams.fortify.com
           TOKEN: ${{ env.TOKEN }}
           # Use your actual IDs; these are the values you shared
-          FOD_APPLICATION_ID: "166695"
-          FOD_RELEASE_ID: "1668424"
+          FOD_APPLICATION_ID: "163813"
+          FOD_RELEASE_ID: "1210403"
           FOD_TEMPLATE_ID: "-4"   # e.g., "Satatic COmpre"
         run: |
           set -euo pipefail
