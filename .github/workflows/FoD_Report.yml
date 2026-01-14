@@ -16,7 +16,7 @@ jobs:
           FOD_API_BASE: https://api.ams.fortify.com   # change to your region
         run: |
           set -euo pipefail
-      
+          echo ${FOD_TENANT}
           # Compose FoD username as <tenant>\<username>
           FOD_USER_COMBINED="${FOD_TENANT}\\${FOD_USER}"
       
