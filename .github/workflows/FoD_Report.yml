@@ -19,7 +19,7 @@ jobs:
 
           # Compose FoD username as <tenant>\<username>
           FOD_USER_COMBINED="${{secrets.FOD_TENANT}}\\${{secrets.FOD_USER}}"
-      
+          echo ${FOD_USER_COMBINED}
           # Request token using Resource Owner Password Credentials
           RESP=$(curl -sS -X POST "$FOD_API_BASE/oauth/token" \
             -H "Content-Type: application/x-www-form-urlencoded" \
