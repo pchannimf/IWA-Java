@@ -17,14 +17,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Compose FoD username as <tenant>\<username>
-          FOD_USER_COMBINED="${{secrets.FOD_TENANT}}\\${{secrets.FOD_USER}}"
-          echo ${FOD_USER_COMBINED}
+        
           # Request token using Resource Owner Password Credentials
           RESP=$(curl -sS -X POST "$FOD_API_BASE/oauth/token" \
             -H "Content-Type: application/x-www-form-urlencoded" \
             --data-urlencode "grant_type=password" \
-            --data-urlencode "username=${FOD_USER_COMBINED}" \
+            --data-urlencode "username=${{secrets.FOD_TENANT}}\\${{secrets.FOD_USER}}" \
             --data-urlencode "password=${{secrets.FOD_PWD}}" \
             --data-urlencode "scope=api-tenant manage-reports" \
           ) || { echo "ERROR: curl failed requesting token"; exit 1; }
