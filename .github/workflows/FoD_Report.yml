@@ -1,0 +1,136 @@
+name: Generate FoD Report
+
+on:
+  workflow_dispatch:  # run manually
+
+jobs:
+  Generate-Report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Get OAuth Token (password grant)
+        env:
+          # Store these in GitHub Secrets, not plaintext:
+          FOD_USERNAME: "<USER>" # please edit this
+          FOD_PASSWORD: "<Password>" # please edit this
+          FOD_TENANT: "<tenant>" # please edit this
+          FOD_API_BASE: https://api.ams.fortify.com   # change to your region
+        run: |
+          set -euo pipefail
+      
+          # Compose FoD username as <tenant>\<username>
+          FOD_USER_COMBINED="${FOD_TENANT}\\${FOD_USERNAME}"
+      
+          # Request token using Resource Owner Password Credentials
+          RESP=$(curl -sS -X POST "$FOD_API_BASE/oauth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            --data-urlencode "grant_type=password" \
+            --data-urlencode "username=${FOD_USER_COMBINED}" \
+            --data-urlencode "password=${FOD_PASSWORD}" \
+            --data-urlencode "scope=api-tenant manage-reports" \
+          ) || { echo "ERROR: curl failed requesting token"; exit 1; }
+      
+          # Validate/parse JSON and extract access_token
+          if ! echo "$RESP" | jq . >/dev/null 2>&1; then
+            echo "ERROR: OAuth response is not JSON (wrong host/region/creds?):"
+            echo "$RESP"
+            exit 1
+          fi
+          TOKEN=$(echo "$RESP" | jq -r '.access_token')
+          [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ] || { echo "ERROR: no access_token in response: $RESP"; exit 1; }
+      
+          echo "TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+
+#-------------------------------------------------------------------------
+      
+      - name: Create Report (includes all Request Model fields)
+        env:
+          FOD_API_BASE: https://api.ams.fortify.com
+          TOKEN: ${{ env.TOKEN }}
+          # Use your actual IDs; these are the values you shared
+          FOD_APPLICATION_ID: "166695"
+          FOD_RELEASE_ID: "1668424"
+          FOD_TEMPLATE_ID: "-4"   # e.g., "Satatic COmpre"
+        run: |
+          set -euo pipefail
+      
+          # Build the JSON with ALL fields from the Request Model
+          REQ_BODY=$(jq -n \
+            --arg aid "$FOD_APPLICATION_ID" \
+            --arg rid "$FOD_RELEASE_ID" \
+            --arg tid "$FOD_TEMPLATE_ID" \
+            --arg name "TestReport-$(date +%F_%H%M%S)" \
+            --arg notes "Nothing to NOTE" \
+            '{
+              applicationId: ($aid|tonumber),
+              releaseId: ($rid|tonumber),
+              reportTemplateTypeId: ($tid|tonumber),
+              reportName: $name,
+              reportFormat: "Pdf",
+              notes: $notes
+            }')
+      
+          echo "Request body:"
+          echo "$REQ_BODY" | jq .
+      
+          RESP=$(curl -sS -X POST "$FOD_API_BASE/api/v3/reports" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "$REQ_BODY")
+      
+          # Show server response for troubleshooting
+          echo "Server response:"
+          echo "$RESP"
+      
+          # If unauthorized, fail fast with message
+          if [ "$(echo "$RESP" | jq -r '.responseCode // empty')" = "401" ]; then
+            echo "Create report returned 401 (authorization failure)."
+            exit 1
+          fi
+      
+          # If validation errors occur, surface them clearly
+          ERR_MSG=$(echo "$RESP" | jq -r '.errors[0].message // empty')
+          if [ -n "$ERR_MSG" ]; then
+            echo "Create report returned error: $ERR_MSG"
+            exit 1
+          fi
+      
+          # Extract reportId
+          REPORT_ID=$(echo "$RESP" | jq -r '.reportId // empty')
+          if [ -z "$REPORT_ID" ]; then
+            echo "Missing reportId in response."
+            exit 1
+          fi
+      
+          echo "REPORT_ID=$REPORT_ID" >> "$GITHUB_ENV"
+          echo "Created reportId=$REPORT_ID"
+
+
+
+#-------------------------------------------------------------------------
+#      - name: Wait for Report
+#        run: |
+#          STATUS=""
+#          until [ "$STATUS" = "Complete" ]; do
+#            STATUS=$(curl -s -H "Authorization: Bearer $TOKEN" \
+#              "https://api.ams.fortify.com/api/v3/reports/$REPORT_ID" | jq -r '.status')
+#            echo "Status: $STATUS"
+#            [ "$STATUS" = "Failed" ] && exit 1
+#            sleep 10
+#          done
+#-------------------------------------------------------------------------
+      - name: Download Report
+        run: |
+          curl -s -L -H "Authorization: Bearer $TOKEN" \
+            "https://api.ams.fortify.com/api/v3/reports/$REPORT_ID/download" \
+            --output "FoD-Report.pdf"
+      
+      - name: Upload Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FoD-Report
+          path: FoD-Report.pdf
